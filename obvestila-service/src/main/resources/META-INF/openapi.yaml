@@ -1,0 +1,105 @@
+openapi: "3.0.3"
+info:
+  title: "Obvestila Service API"
+  description: |
+    Ustvarjanje obvestil za uporabnika.
+    Obvestila nastanejo tudi ob dogodkih iz VoznjeService in ServisService
+    (glej opis dogodkov spodaj v schemas).
+  version: "1.0.0"
+servers:
+  - url: "http://localhost:8084/api/v1"
+
+paths:
+  /uporabnik/{uporabnikId}/obvestila:
+    parameters:
+      - name: uporabnikId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags: [Obvestila]
+      summary: Ustvari obvestilo za uporabnika
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ObvestiloInput'
+      responses:
+        '201':
+          description: Obvestilo ustvarjeno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Obvestilo'
+        '400':
+          description: Invalid input
+        '404':
+          description: User not found
+
+components:
+  schemas:
+    ObvestiloInput:
+      type: object
+      required: [tip, sporocilo]
+      properties:
+        tip:
+          type: string
+          enum: [servis, voznja, sistem]
+        sporocilo:
+          type: string
+          example: Servis je bil uspešno zabeležen
+    Obvestilo:
+      allOf:
+        - $ref: '#/components/schemas/ObvestiloInput'
+        - type: object
+          required: [id, uporabnik_id, cas]
+          properties:
+            id:
+              type: string
+              format: uuid
+            uporabnik_id:
+              type: string
+              format: uuid
+            cas:
+              type: string
+              format: date-time
+            prebrano:
+              type: boolean
+              default: false
+
+    # Dogodki (sporočila med storitvami, ne REST endpointi)
+    VoznjaZabelezena:
+      type: object
+      description: Objavi VoznjeService po shranjeni vožnji. Prejme ObvestilaService.
+      properties:
+        uporabnik_id:
+          type: string
+          format: uuid
+        avto_id:
+          type: string
+          format: uuid
+        voznja_id:
+          type: string
+          format: uuid
+        cas:
+          type: string
+          format: date-time
+    ServisZabelezen:
+      type: object
+      description: Objavi ServisService po shranjenem servisu. Prejme ObvestilaService.
+      properties:
+        uporabnik_id:
+          type: string
+          format: uuid
+        avto_id:
+          type: string
+          format: uuid
+        servis_id:
+          type: string
+          format: uuid
+        cas:
+          type: string
+          format: date-time
